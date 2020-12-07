@@ -1,4 +1,4 @@
-# DeepFocus
+# CorrectionForeheadTemperature
 Code and raw data for the implementation of "Correction of human forehead temperature variations measured by non-contact infrared thermometer"
 
 ## Citation
