@@ -14,26 +14,45 @@ import matplotlib
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import make_pipeline
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib.cbook as cbook
+from matplotlib import cm
+from matplotlib.colors import Normalize 
+from scipy.interpolate import interpn
 
 df = pd.read_csv('data.csv')
 df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
 df = df.set_index(pd.DatetimeIndex(df['timestamp']))
-df = df[df['timestamp'] >= pd.Timestamp('2020/08/25')]
-df = df[df['timestamp'] <= pd.Timestamp('2020/10/02')]
+df = df[df['timestamp'] >= pd.Timestamp('2020/08/30')]
+df = df[df['timestamp'] <= pd.Timestamp('2020/10/03')]
 df = df[df['obj_score'] <= 39]
 df = df[df['obj_score'] >= 33.5]
-
+df['obj_score'] = df['obj_score'] + 0.1
 
 print(df['timestamp'])
 print(df.index)
 
+def density_scatter( x , y, ax = None, sort = True, bins = 15, **kwargs )   :
 
+    if ax is None :
+        fig , ax = plt.subplots()
+    data , x_e, y_e = np.histogram2d( x, y, bins = bins, density = True)
+    z = interpn( ( 0.5*(x_e[1:] + x_e[:-1]) , 0.5*(y_e[1:]+y_e[:-1]) ) , data , np.vstack([x,y]).T , method = "splinef2d", bounds_error = False)
 
+    z[np.where(np.isnan(z))] = 0.0
 
+    if sort :
+        idx = z.argsort()
+        x, y, z = x[idx], y[idx], z[idx]
 
+    ax.scatter( x, y, c=z, s=2.5, **kwargs )
 
+    norm = Normalize(vmin = np.min(z), vmax = np.max(z))
+    #cbar = fig.colorbar(cm.ScalarMappable(norm = norm), ax=ax)
+    #cbar.ax.set_ylabel('Density')
 
-
+    return ax
 
 fig, ax = plt.subplots(figsize=(6, 2.5), dpi=180)
 plt.plot(df['timestamp'], df['obj_score'],'.', alpha=0.1, label='Forehead temperature')
@@ -46,12 +65,12 @@ plt.fill_between(df_mean.index+pd.Timedelta('0.5 day'), df_mean['obj_score'] - d
                  color='gray', alpha=1.0)
 
 # Set title and labels for axes
-ax.set(       ylabel="Forehead temp. (deg. C)", xlabel="Time")
+ax.set(       ylabel="Forehead temp. (deg. C)", xlabel="Time (days)")
 
 # Rotate tick marks on x-axis
 #plt.setp(ax.get_xticklabels(), rotation=0)
 frame1 = plt.gca()
-frame1.axes.xaxis.set_ticks([])
+#frame1.axes.xaxis.set_ticks([])
 #ax.set_legend['Forehead temperature', 'Average over a day']
 ax.legend()
 print(len(df))
@@ -60,6 +79,24 @@ fig.subplots_adjust(bottom=0.2)
 mean_raw = df['obj_score'].mean()
 plt.tight_layout()
 ax.set_ylim(33,39)
+
+years = mdates.YearLocator()   # every year
+months = mdates.MonthLocator()  # every month
+days = mdates.DayLocator()  # every month
+
+years_fmt = mdates.DateFormatter('%Y')
+
+ax.xaxis.set_major_locator(months)
+ax.xaxis.set_minor_locator(days)
+
+
+# format the coords message box
+#ax.format_xdata = mdates.DateFormatter('%Y-%m-%d')
+
+# rotates and right aligns the x labels, and moves the bottom of the
+# axes up to make room for them
+#fig.autofmt_xdate()
+
 
 plt.savefig('all_data.png')
 
@@ -91,6 +128,9 @@ print("len {} avg {} std {}".format(len(df_filtered), df_filtered['obj_score'].m
 
 more_than_37 = df['obj_score']
 print(len(more_than_37[more_than_37 > more_than_37.mean() + 3*more_than_37.std()]))
+
+df_filtered_notouch = df[df['meteo_realtemp'] > 0]
+df_filtered_notouch = df_filtered_notouch[df_filtered_notouch['machine_id'].isin([25,32,33,47,36,45,58,22,48,52])]
 
 plt.rcParams["figure.dpi"] = 180
 fig, ax = plt.subplots(figsize=(6, 2.5), dpi=180)
@@ -125,7 +165,7 @@ print('R2 = ',score_r2)
 ax.set(xlabel="Outside temperature (deg. C)",
        ylabel="Forehead temp. (deg. C)")
 
-plt.plot(df_outside['meteo_realtemp'], df_outside['obj_score'],'.', alpha=0.1, label='Forehead temperature')
+density_scatter(df_outside['meteo_realtemp'], df_outside['obj_score'], ax=ax,label='Forehead temperature')
 plt.plot(X, Y_pred, 'red', label=r'Linear fit $R^2={:.2f}$'.format(score_r2))
 
 #df_ambient = df.resample('D').apply({'amb_temp':'mean'})
@@ -159,7 +199,7 @@ print('R2 = ',score_r2)
 ax.set(xlabel="Outside temperature (degrees C)",
        ylabel="Forehead temp. (deg. C)")
 curve = linear_regressor.predict(df_outside['meteo_realtemp'].values.reshape(-1, 1))[:,0]
-plt.plot(df_outside['meteo_realtemp'], df_outside['obj_score']-curve+mean_raw,'.', alpha=0.1, label='Forehead temperature')
+density_scatter(df_outside['meteo_realtemp'], df_outside['obj_score']-curve+mean_raw,ax = ax, label='Forehead temperature')
 ax.set_ylim(33,39)
 
 #df_ambient = df.resample('D').apply({'amb_temp':'mean'})
@@ -195,7 +235,7 @@ ax.set(xlabel="Ambient temperature (degrees C)",
        ylabel="Forehead temp. (deg. C)")
 ax.set_ylim(33,39)
 
-plt.plot(df_ambient['amb_temp'], df_ambient['obj_score'],'.', alpha=0.1, label='Forehead temperature')
+density_scatter(df_ambient['amb_temp'], df_ambient['obj_score'],ax = ax, label='Forehead temperature')
 plt.plot(X, Y_pred, 'red', label=r'Linear fit $R^2={:.2f}$'.format(score_r2))
 
 
@@ -227,7 +267,7 @@ ax.set(xlabel="Ambient temperature (degrees C)",
 curve = linear_regressor.predict(df_ambient['amb_temp'].values.reshape(-1, 1))[:,0]
 ax.set_ylim(33,39)
 
-plt.plot(df_ambient['amb_temp'], df_ambient['obj_score']-curve+mean_raw,'.', alpha=0.1, label='Forehead temperature')
+density_scatter(df_ambient['amb_temp'], df_ambient['obj_score']-curve+mean_raw,ax = ax, label='Forehead temperature')
 
 
 #df_ambient = df.resample('D').apply({'amb_temp':'mean'})
@@ -260,7 +300,7 @@ ax.set(xlabel="Ambient temperature (degrees C)",
 curve = linear_regressor.predict(df_ambient['amb_temp'].values.reshape(-1, 1))[:,0]
 ax.set_ylim(33,39)
 
-plt.plot(df_ambient['amb_temp'], df_ambient['obj_score']-curve+mean_raw,'.', alpha=0.1, label='Forehead temperature')
+density_scatter(df_ambient['amb_temp'], df_ambient['obj_score']-curve+mean_raw,ax=ax, label='Forehead temperature')
 
 #plt.plot(df_ambient['amb_temp'], df_ambient['obj_score'],'.', alpha=0.1, label='Forehead temperature')
 #plt.plot(X, Y_pred, 'red', label=r'Linear fit $R^2={:.2f}$'.format(score_r2))
@@ -309,7 +349,7 @@ by_hour = df_hours.groupby(df_hours.index.hour+2).mean()
 by_hour_std = df_hours.groupby(df_hours.index.hour+2).std()
 
 
-plt.plot(df_hours.index.hour, df_hours['obj_score'],'.', alpha=0.1, label='Forehead temperature')
+density_scatter(df_hours.index.hour, df_hours['obj_score'],ax=ax,label='Forehead temperature')
 plt.plot(by_hour.index, by_hour['obj_score'],'-', alpha=1.0, label='Temperature average')
 plt.fill_between(by_hour.index, by_hour['obj_score'] - by_hour_std['obj_score']/2, by_hour['obj_score'] + by_hour_std['obj_score']/2,
                  color='gray', alpha=0.3)
@@ -367,7 +407,7 @@ plt.fill_between(df_mean.index+pd.Timedelta('0.5 day'), df_mean['obj_score'] - d
                  color='gray', alpha=1.0)
 
 # Set title and labels for axes
-ax.set(       ylabel="Forehead temp. (deg. C)", xlabel="Time")
+ax.set(       ylabel="Forehead temp. (deg. C)", xlabel="Time (days)")
 frame1 = plt.gca()
 frame1.axes.xaxis.set_ticks([])
 #plt.plot(df_hours['amb_temp'], df_hours['obj_score']-curve+df_hours['obj_score'].mean(),'.', alpha=0.1, label='Forehead temperature')
@@ -391,6 +431,16 @@ print(len(df_hours))
 more_than_37 = df_hours['obj_score']
 fig.subplots_adjust(bottom=0.2) 
 ax.set_ylim(33,39)
+
+years = mdates.YearLocator()   # every year
+months = mdates.MonthLocator()  # every month
+days = mdates.DayLocator()  # every month
+
+years_fmt = mdates.DateFormatter('%Y')
+
+ax.xaxis.set_major_locator(months)
+ax.xaxis.set_minor_locator(days)
+
 plt.tight_layout()
 
 print(len(more_than_37[more_than_37 > more_than_37.mean() + 2*more_than_37.std()]))
@@ -444,3 +494,94 @@ plt.legend()
 plt.tight_layout()
 
 plt.savefig('hist_corr.png')
+
+print(len(df_filtered_notouch))
+print(len(df_hours['obj_score']))
+
+
+
+
+data1     = np.asarray(df_filtered_notouch['obj_score'])
+data2     = np.asarray(df_hours['obj_score'])
+mean      = np.mean([data1, data2], axis=0)
+diff      = -data1 + data2                   # Difference between data1 and data2
+md        = np.mean(diff)                   # Mean of the difference
+sd        = np.std(diff, axis=0)            # Standard deviation of the difference
+
+print("Mean:  {} SD: {}".format(md.mean(), sd.mean()))
+
+fig, ax = plt.subplots(figsize=(6, 3), dpi=180)
+
+density_scatter(df_hours['obj_score'], diff, ax = ax)
+plt.axhline(md,           color='gray', linestyle='--')
+
+ax.annotate('mean diff:\n{}'.format(np.round(md, 2)),
+            xy=(0.99, 0.5),
+            horizontalalignment='right',
+            verticalalignment='center',
+            fontsize=10,
+            color='red',
+            xycoords='axes fraction')
+    
+plt.axhline(md + 1.96*sd, color='gray', linestyle='--')
+plt.axhline(md - 1.96*sd, color='gray', linestyle='--')
+
+ax.annotate('-{}SD: {}'.format(1.96, np.round(md - 1.96*sd, 2)),
+            xy=(0.99, 0.08),
+            horizontalalignment='right',
+            verticalalignment='bottom',
+            fontsize=10,
+            color='red',
+            xycoords='axes fraction')
+ax.annotate('+{}SD: {}'.format(1.96, np.round(md + 1.96*sd, 2)),
+            xy=(0.99, 0.86),
+            horizontalalignment='right',
+            fontsize=10,
+            color='red',
+            xycoords='axes fraction')
+        
+
+ax.set(xlabel="Temperature mean (deg. C)",
+       ylabel="Correction (deg. C)")
+
+plt.tight_layout()
+plt.savefig('bland-altman.png')
+
+
+
+fig, ax = plt.subplots(figsize=(6, 3), dpi=180)
+
+density_scatter(df_hours['meteo_realtemp'], diff, ax = ax)
+plt.axhline(md,           color='gray', linestyle='--')
+
+ax.annotate('mean diff:\n{}'.format(np.round(md, 2)),
+            xy=(0.99, 0.5),
+            horizontalalignment='right',
+            verticalalignment='center',
+            fontsize=10,
+            color='red',
+            xycoords='axes fraction')
+    
+plt.axhline(md + 1.96*sd, color='gray', linestyle='--')
+plt.axhline(md - 1.96*sd, color='gray', linestyle='--')
+
+ax.annotate('-{}SD: {}'.format(1.96, np.round(md - 1.96*sd, 2)),
+            xy=(0.99, 0.08),
+            horizontalalignment='right',
+            verticalalignment='bottom',
+            fontsize=10,
+            color='red',
+            xycoords='axes fraction')
+ax.annotate('+{}SD: {}'.format(1.96, np.round(md + 1.96*sd, 2)),
+            xy=(0.99, 0.86),
+            horizontalalignment='right',
+            fontsize=10,
+            color='red',
+            xycoords='axes fraction')
+        
+
+ax.set(xlabel="Outside temperature (deg. C)",
+       ylabel="Correction (deg. C)")
+
+plt.tight_layout()
+plt.savefig('bland-altman-outside.png')
