@@ -105,21 +105,21 @@ print('Personal mean {}, personal std {}'.format(groups.mean(), groups.std()))
 
 
 print("Location A")
-df_filtered = df[df['machine_id'].isin([36])]
+df_filtered = df[df['machine_id'].isin([4428])]
 print("len {} avg {} std {}".format(len(df_filtered), df_filtered['obj_score'].mean(), df_filtered['obj_score'].std()))
 
 groups = df_filtered.groupby(['rfid_uid']).std()['obj_score']
 print('Personal mean {}, personal std {}'.format(groups.mean(), groups.std()))
 
 print("Location B")
-df_filtered = df[df['machine_id'].isin([24,25,30,31,32,33,34,35])]
+df_filtered = df[df['machine_id'].isin([2952,3075,3690,3813,3936,4059,4182,4305])]
 
 groups = df_filtered.groupby(['rfid_uid']).std()['obj_score']
 print('Personal mean {}, personal std {}'.format(groups.mean(), groups.std()))
 
 print("len {} avg {} std {}".format(len(df_filtered), df_filtered['obj_score'].mean(), df_filtered['obj_score'].std()))
 print("Location C")
-df_filtered = df[df['machine_id'].isin([52])]
+df_filtered = df[df['machine_id'].isin([6396])]
 
 groups = df_filtered.groupby(['rfid_uid']).std()['obj_score']
 print('Personal mean {}, personal std {}'.format(groups.mean(), groups.std()))
@@ -130,7 +130,7 @@ more_than_37 = df['obj_score']
 print(len(more_than_37[more_than_37 > more_than_37.mean() + 3*more_than_37.std()]))
 
 df_filtered_notouch = df[df['meteo_realtemp'] > 0]
-df_filtered_notouch = df_filtered_notouch[df_filtered_notouch['machine_id'].isin([25,32,33,47,36,45,58,22,48,52])]
+df_filtered_notouch = df_filtered_notouch[df_filtered_notouch['machine_id'].isin([3075, 3936, 4059, 5781, 4428, 5535, 7134, 2706, 5904, 6396])]
 
 plt.rcParams["figure.dpi"] = 180
 fig, ax = plt.subplots(figsize=(6, 2.5), dpi=180)
@@ -152,7 +152,7 @@ plt.savefig('hist_all.png')
 
 fig, ax = plt.subplots(figsize=(6, 2.5), dpi=180)
 df_outside = df[df['meteo_realtemp'] > 0]
-df_outside = df_outside[df_outside['machine_id'].isin([25,32,33,47,36,45,58,22,48,52])] #encore peut être 45,58,22,48,45,58,22,48,36
+df_outside = df_outside[df_outside['machine_id'].isin([3075, 3936, 4059, 5781, 4428, 5535, 7134, 2706, 5904, 6396])] 
 
 linear_regressor = LinearRegression()
 linear_regressor.fit(df_outside['meteo_realtemp'].values.reshape(-1, 1), df_outside['obj_score'].values.reshape(-1, 1))
@@ -186,7 +186,7 @@ plt.savefig('outside_forehead.png')
 
 fig, ax = plt.subplots(figsize=(6, 2.5), dpi=180)
 df_outside = df[df['meteo_realtemp'] > 0]
-df_outside = df_outside[df_outside['machine_id'].isin([25,32,33,47,36,45,58,22,48,52])] #encore peut être 45,58,22,48,45,58,22,48,36
+df_outside = df_outside[df_outside['machine_id'].isin([3075, 3936, 4059, 5781, 4428, 5535, 7134, 2706, 5904, 6396])]
 
 linear_regressor = LinearRegression()
 linear_regressor.fit(df_outside['meteo_realtemp'].values.reshape(-1, 1), df_outside['obj_score'].values.reshape(-1, 1))
@@ -222,7 +222,6 @@ plt.savefig('outside_forehead_corr.png')
 
 fig, ax = plt.subplots(figsize=(6, 2.5), dpi=180)
 df_ambient = df[df['amb_temp'] > 0]
-#df_ambient = df_ambient[df_ambient['machine_id'].isin([25,32,33,36,47])] # [25,32,33,36,47]encore peut être 45,58,22,48
 
 linear_regressor = LinearRegression()
 linear_regressor.fit(df_ambient['amb_temp'].values.reshape(-1, 1), df_ambient['obj_score'].values.reshape(-1, 1))
@@ -253,7 +252,6 @@ plt.savefig('ambient_forehead.png')
 
 fig, ax = plt.subplots(figsize=(6, 2.5), dpi=180)
 df_ambient = df[df['amb_temp'] > 0]
-#df_ambient = df_ambient[df_ambient['machine_id'].isin([25,32,33,36,47])] # [25,32,33,36,47]encore peut être 45,58,22,48
 
 linear_regressor = LinearRegression()
 linear_regressor.fit(df_ambient['amb_temp'].values.reshape(-1, 1), df_ambient['obj_score'].values.reshape(-1, 1))
@@ -286,7 +284,6 @@ plt.savefig('ambient_forehead_corr.png')
 
 fig, ax = plt.subplots(figsize=(6, 2.5), dpi=180)
 df_ambient = new_df[new_df['amb_temp'] > 0]
-#df_ambient = df_ambient[df_ambient['machine_id'].isin([25,32,33,36,47])] # [25,32,33,36,47]encore peut être 45,58,22,48
 
 linear_regressor = LinearRegression()
 linear_regressor.fit(df_ambient['amb_temp'].values.reshape(-1, 1), df_ambient['obj_score'].values.reshape(-1, 1))
@@ -328,7 +325,6 @@ fig, ax = plt.subplots(figsize=(6, 2.5), dpi=180)
 df_hours = df
 df_hours['hours'] = df_hours.index.hour
 
-#df_hours = df_hours[df_hours['machine_id'].isin([45,58,22,48,45,58,22,48,36])] #encore peut être 45,58,22,48,45,58,22,48,36
 
 linear_regressor = make_pipeline(
         PolynomialFeatures(degree=2),
@@ -376,7 +372,6 @@ fig, ax = plt.subplots(figsize=(6, 2.5), dpi=180)
 df_hours = new_df_all
 df_hours['hours'] = df_hours.index.hour
 
-#df_hours = df_hours[df_hours['machine_id'].isin([45,58,22,48,45,58,22,48,36])] #encore peut être 45,58,22,48,45,58,22,48,36
 
 linear_regressor = make_pipeline(
         PolynomialFeatures(degree=2),
@@ -455,21 +450,21 @@ print('Personal mean {}, personal std {}'.format(groups.mean(), groups.std()))
 
 
 print("Location A")
-df_filtered = df_hours[df_hours['machine_id'].isin([36])]
+df_filtered = df_hours[df_hours['machine_id'].isin([4428])]
 print("len {} avg {} std {}".format(len(df_filtered), df_filtered['obj_score'].mean(), df_filtered['obj_score'].std()))
 
 groups = df_filtered.groupby(['rfid_uid']).std()['obj_score']
 print('Personal mean {}, personal std {}'.format(groups.mean(), groups.std()))
 
 print("Location B")
-df_filtered = df_hours[df_hours['machine_id'].isin([24,25,30,31,32,33,34,35])]
+df_filtered = df_hours[df_hours['machine_id'].isin([2952, 3075, 3690, 3813, 3936, 4059, 4182, 4305])]
 
 groups = df_filtered.groupby(['rfid_uid']).std()['obj_score']
 print('Personal mean {}, personal std {}'.format(groups.mean(), groups.std()))
 
 print("len {} avg {} std {}".format(len(df_filtered), df_filtered['obj_score'].mean(), df_filtered['obj_score'].std()))
 print("Location C")
-df_filtered = df_hours[df_hours['machine_id'].isin([52])]
+df_filtered = df_hours[df_hours['machine_id'].isin([5396])]
 
 groups = df_filtered.groupby(['rfid_uid']).std()['obj_score']
 print('Personal mean {}, personal std {}'.format(groups.mean(), groups.std()))
